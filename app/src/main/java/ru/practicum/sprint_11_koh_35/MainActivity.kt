@@ -9,12 +9,21 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.GsonBuilder
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
+import retrofit2.http.Query
 import ru.practicum.sprint_11_koh_31.R
 import java.util.Date
 
@@ -46,19 +55,29 @@ class MainActivity : AppCompatActivity() {
         val itemsRv: RecyclerView = findViewById(R.id.items)
         itemsRv.adapter = adapter
 
+        val jsonConfiguration = Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+            isLenient = true
+        }
+
         val retrofit = Retrofit.Builder()
             .baseUrl("https://raw.githubusercontent.com/BenDenen/sprint-11-koh-35/")
             .addConverterFactory(
-                GsonConverterFactory.create(
-                    GsonBuilder()
-                        .registerTypeAdapter(Date::class.java, CustomDateTypeAdapter())
-                        .create()
-                )
+                jsonConfiguration.asConverterFactory("application/json".toMediaType())
             )
+//            .addConverterFactory(
+//                GsonConverterFactory.create(
+//                    GsonBuilder()
+//                        .registerTypeAdapter(Date::class.java, CustomDateTypeAdapter())
+//                        .registerTypeAdapter(NewsItem::class.java, NewsItemAdapter())
+//                        .create()
+//                )
+//            )
             .build()
         val serverApi = retrofit.create(Sprint11ServerApi::class.java)
 
-        serverApi.getNews1().enqueue(object : Callback<NewsResponse> {
+        serverApi.getNews1("news_2.json").enqueue(object : Callback<NewsResponse> {
             override fun onResponse(call: Call<NewsResponse>, response: Response<NewsResponse>) {
                 Log.i(TAG, "onResponse: ${response.code()} ${response.body()}")
 
@@ -71,7 +90,6 @@ class MainActivity : AppCompatActivity() {
 
         })
 
-
     }
 
     companion object {
@@ -82,7 +100,7 @@ class MainActivity : AppCompatActivity() {
 
 interface Sprint11ServerApi {
 
+    @GET("refs/heads/master/jsons/{name}")
+    fun getNews1(@Path("name") name:String): Call<NewsResponse>
 
-    @GET("refs/heads/master/jsons/news_1.json")
-    fun getNews1(): Call<NewsResponse>
 }
